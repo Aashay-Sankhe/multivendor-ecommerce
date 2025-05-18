@@ -5,26 +5,24 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { CategoryWithSubcategories } from "@/modules/categories/server/procedures";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { CategoriesGetManyOutput, CategoriesGetManyOutputSingle } from "@/modules/categories/types";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
 
-export const CategoriesSidebar = ({open, onOpenChange,
-
-}: Props) => {
-
+export const CategoriesSidebar = ({open, onOpenChange}: Props) => {
     const trpc = useTRPC();
     const {data} = useQuery(trpc.categories.getMany.queryOptions());
     const router = useRouter();
-    const [parentCategories, setParentCategories] = useState<CategoriesGetManyOutput | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<CategoriesGetManyOutput[1] | null>(null);
+    const [parentCategories, setParentCategories] = useState<CategoryWithSubcategories[] | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<CategoryWithSubcategories | null>(null);
 
     const currentCategories = parentCategories ?? data ?? [];
 
@@ -34,24 +32,23 @@ export const CategoriesSidebar = ({open, onOpenChange,
         onOpenChange(open);
     };
 
-    const handleCategoryClick = (category: CategoriesGetManyOutput[1]) => {
+    const handleCategoryClick = (category: CategoryWithSubcategories) => {
         if(category.subcategories && category.subcategories.length > 0){
-            setParentCategories(category.subcategories as CategoriesGetManyOutput);
+            setParentCategories(category.subcategories);
             setSelectedCategory(category);
         } else {
             if (parentCategories && selectedCategory){
                 router.push(`/${selectedCategory.slug}/${category.slug}`);
-        } else{
-            if (category.slug === "all"){
-                router.push("/");
-            } else{
-                router.push(`/${category.slug}`);
+            } else {
+                if (category.slug === "all"){
+                    router.push("/");
+                } else {
+                    router.push(`/${category.slug}`);
+                }
             }
+            handleOpenChange(false);
         }
-
-        handleOpenChange(false);
-    }
-    }
+    };
 
     const handleBackClick = () => {
         if(parentCategories){
